@@ -50,7 +50,7 @@ public class BasicReplier {
         final JCSMPSession session = JCSMPFactory.onlyInstance().createSession(properties);
         session.connect();
 
-        final Topic topic = JCSMPFactory.onlyInstance().createTopic("tutorial/requests");
+        final Topic topic = JCSMPFactory.onlyInstance().createTopic("GET/>");
 
         /** Anonymous inner-class for handling publishing events */
         final XMLMessageProducer producer = session.getMessageProducer(new JCSMPStreamingPublishCorrelatingEventHandler() {
@@ -76,8 +76,15 @@ public class BasicReplier {
                     TextMessage reply = JCSMPFactory.onlyInstance().createMessage(TextMessage.class);
 
                     final String text = "Sample response";
-                    reply.setText(text);
-
+		    try {
+          	        reply.setText("Your path was: "+request.getProperties().getString("JMS_Solace_HTTP_target_path_query_verbatim"));
+		   } catch (Exception e) {
+         	        reply.setText(text);
+		   }
+			
+		   System.out.println(request.dump());  // prints the request message to the console
+		   reply.setApplicationMessageId(request.getApplicationMessageId());  // needed for correlation
+			
                     try {
                         producer.sendReply(request, reply);
                     } catch (JCSMPException e) {
